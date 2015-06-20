@@ -1,5 +1,6 @@
 # Script to clean up data from accelerometers
 # Zip file with data must be in working directory
+# Will install dplyr package if not installed
 
 # 1. Unzip files (if necessary)
 if (!file.exists("./UCI HAR Dataset")) {
@@ -61,36 +62,36 @@ for (i in 3:length(column_names)) {
   abbrev <- column_names[i]
   
   # 5.1 Get domain
-  domain <- ifelse(substring(abbrev, 1, 1) == "t", "time domain - ", "frequency domain - ")
+  domain <- ifelse(substring(abbrev, 1, 1) == "t", "time_", "frequency_")
   
   # 5.2 Get axis
   if (grepl("X", abbrev)) {
-    axis <- "X Axis "
+    axis <- "X_Axis_"
   }
   else if (grepl("Y", abbrev)) {
-    axis <- "Y Axis "
+    axis <- "Y_Axis_"
   }
   else if (grepl("Z", abbrev)) {
-    axis <- "Z Axis "
+    axis <- "Z_Axis_"
   }
   else {
     axis <- ""
   }
   
   # 5.3 Get signal source
-  signal_source <- ifelse(grepl("Body", abbrev), "Body ", "Gravity ")
+  signal_source <- ifelse(grepl("Body", abbrev), "Body_", "Gravity_")
 
   # 5.4 Get tool
-  tool <- ifelse(grepl("Acc", abbrev), "Accelerator ", "Gyroscope ")
+  tool <- ifelse(grepl("Acc", abbrev), "Accelerator_", "Gyroscope_")
   
   # 5.5 Check for jerk signal
-  jerk <- ifelse(grepl("Jerk ", abbrev), "Jerk", "")
+  jerk <- ifelse(grepl("Jerk", abbrev), "Jerk_", "")
   
   # 5.6 Check for magnitude
-  mag <- ifelse(grepl("Mag", abbrev), "Magnitude ", "")
+  mag <- ifelse(grepl("Mag", abbrev), "Magnitude_", "")
   
   # 5.7 Get variable
-  variable <- ifelse(grepl("mean()", abbrev), "- mean", "- standard deviation")
+  variable <- ifelse(grepl("mean()", abbrev), "mean", "standard_deviation")
   
   # 5.8 Paste strings
   full_name <- paste(domain, axis, signal_source, tool, jerk, mag, variable, sep="")
@@ -101,3 +102,20 @@ names(ds) <- column_names
 
 # 6. Create data set with average of each variable for each
 #    activity and each subject
+
+# 6.1 Replace columns "Activity" and "Subject" with column combining both
+ds$Subject <- formatC(ds$Subject, width=2, flag="0")
+Subject_and_Activity <- paste("Subject", ds$Subject, ds$Activity, sep="_")
+ds <- cbind(Subject_and_Activity, ds[3:ncol(ds)])
+
+# 6.2 Summarise data set and get the mean of each variable by subject and activity
+#     (uses the dplyr package; will install it if package is not found)
+if (!"dplyr" %in% rownames(installed.packages())) {
+  install.packages("dplyr")
+}
+library(dplyr)
+ds <- group_by(ds, Subject_and_Activity)
+ds <- summarise_each(ds, funs(mean))
+
+# 7. Remove everything but the data set
+remove(list=setdiff(ls(), "ds"))
