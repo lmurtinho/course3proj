@@ -28,13 +28,17 @@ ds <- rbind(test, train)
 remove(test, train)
   
 # 3. Extract mean and standard deviation for each measurement
+
+# 3.1 Get the labels of the featured measures
 features <- read.table("./UCI HAR Dataset/features.txt")[, 2]
+
+# 3.2 Prepare vectors to store information
 to_keep <- c()                              # Vector to store indices of columns to keep
 column_names <- c("Activity", "Subject")    # Vector to store names of columns to keep
-count <- 2                                  # The first two columns are activity and subject!
 
-# 3.1 Loop each element of the features vector to find out
+# 3.3 Loop each element of the features vector to find out
 #     in which columns the means and standard deviations are
+count <- 2 # The first two columns are activity and subject!
 for (feature in features) {
   count <- count + 1
   if (grepl("mean()", feature, fixed = TRUE) || grepl("std()", feature, fixed = TRUE)) {
@@ -43,7 +47,7 @@ for (feature in features) {
   }
 }
 
-# 3.2 Keep only the first two columns plus those
+# 3.4 Keep only the first two columns plus those
 #     with means and standard deviations
 ds <- ds[,c(1, 2, to_keep)]
   
@@ -56,46 +60,46 @@ activity_labels <- as.character(read.table("./UCI HAR Dataset/activity_labels.tx
 #     and replace number with label
 ds[,1] <- activity_labels[ds[,1]]
 
-# 5. Name variables
+# 5. Rename columns
 for (i in 3:length(column_names)) {
   
-  abbrev <- column_names[i]
+abbrev <- column_names[i]
   
-  # 5.1 Get domain
-  domain <- ifelse(substring(abbrev, 1, 1) == "t", "time_", "frequency_")
+# 5.1 Get domain
+domain <- ifelse(substring(abbrev, 1, 1) == "t", "time_", "frequency_")
   
-  # 5.2 Get axis
-  if (grepl("X", abbrev)) {
-    axis <- "X_Axis_"
-  }
-  else if (grepl("Y", abbrev)) {
-    axis <- "Y_Axis_"
-  }
-  else if (grepl("Z", abbrev)) {
-    axis <- "Z_Axis_"
-  }
-  else {
-    axis <- ""
+# 5.2 Get axis
+if (grepl("X", abbrev)) {
+axis <- "X_Axis_"
+}
+else if (grepl("Y", abbrev)) {
+axis <- "Y_Axis_"
+}
+else if (grepl("Z", abbrev)) {
+axis <- "Z_Axis_"
+}
+else {
+axis <- ""
   }
   
-  # 5.3 Get signal source
-  signal_source <- ifelse(grepl("Body", abbrev), "Body_", "Gravity_")
+# 5.3 Get signal source
+signal_source <- ifelse(grepl("Body", abbrev), "Body_", "Gravity_")
 
-  # 5.4 Get tool
-  tool <- ifelse(grepl("Acc", abbrev), "Accelerator_", "Gyroscope_")
-  
-  # 5.5 Check for jerk signal
-  jerk <- ifelse(grepl("Jerk", abbrev), "Jerk_", "")
-  
-  # 5.6 Check for magnitude
-  mag <- ifelse(grepl("Mag", abbrev), "Magnitude_", "")
-  
-  # 5.7 Get variable
-  variable <- ifelse(grepl("mean()", abbrev), "mean", "standard_deviation")
-  
-  # 5.8 Paste strings
-  full_name <- paste(domain, axis, signal_source, tool, jerk, mag, variable, sep="")
-  column_names[i] <- full_name
+# 5.4 Get tool
+tool <- ifelse(grepl("Acc", abbrev), "Accelerator_", "Gyroscope_")
+
+# 5.5 Check for jerk signal
+jerk <- ifelse(grepl("Jerk", abbrev), "Jerk_", "")
+
+# 5.6 Check for magnitude
+mag <- ifelse(grepl("Mag", abbrev), "Magnitude_", "")
+
+# 5.7 Get variable
+variable <- ifelse(grepl("mean()", abbrev), "mean", "standard_deviation")
+
+# 5.8 Paste strings
+full_name <- paste(domain, axis, signal_source, tool, jerk, mag, variable, sep="")
+column_names[i] <- full_name
 }  
 
 names(ds) <- column_names
@@ -116,6 +120,11 @@ if (!"dplyr" %in% rownames(installed.packages())) {
 library(dplyr)
 ds <- group_by(ds, Subject_and_Activity)
 ds <- summarise_each(ds, funs(mean))
+
+# 7. Replace separate columns with activity and subject
+Subject <- substring(ds$Subject_and_Activity, 9, 10)
+Activity <- substring(ds$Subject_and_Activity, 12, nchar(as.character(ds$Subject_and_Activity)))
+ds <- cbind(Subject, Activity, ds[2:ncol(ds)])
 
 # 7. Remove everything but the data set
 remove(list=setdiff(ls(), "ds"))
