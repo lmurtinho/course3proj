@@ -86,7 +86,7 @@ axis <- ""
 signal_source <- ifelse(grepl("Body", abbrev), "Body_", "Gravity_")
 
 # 5.4 Get tool
-tool <- ifelse(grepl("Acc", abbrev), "Accelerator_", "Gyroscope_")
+tool <- ifelse(grepl("Acc", abbrev), "Accelerometer_", "Gyroscope_")
 
 # 5.5 Check for jerk signal
 jerk <- ifelse(grepl("Jerk", abbrev), "Jerk_", "")
@@ -126,5 +126,5 @@ Subject <- substring(ds$Subject_and_Activity, 9, 10)
 Activity <- substring(ds$Subject_and_Activity, 12, nchar(as.character(ds$Subject_and_Activity)))
 ds <- cbind(Subject, Activity, ds[2:ncol(ds)])
 
-# 7. Remove everything but the data set
+# 8. Remove everything but the data set
 remove(list=setdiff(ls(), "ds"))
